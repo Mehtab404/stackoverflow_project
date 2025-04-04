@@ -3,63 +3,132 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Topic Trends</title>
+    <title>Tag Popularity Trends (2023-2025)</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .chart-container {
+            position: relative;
+            height: 500px;
+            margin-bottom: 30px;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+            font-size: 18px;
+            color: #666;
+        }
+    </style>
 </head>
 <body>
-    <div class="chart-container">
-        <h1 align="center">Stack Overflow Tag Analysis 2023-25</h1>
-        <canvas id="topicChart" style="padding: 80px 130px;"></canvas>
+    <div class="container">
+        <h1>Tag Popularity Trends (2023-2025)</h1>
+        <div class="chart-container">
+            <canvas id="tagChart"></canvas>
+        </div>
     </div>
 
-    <script>    
-        const API_URL = window.location.origin + "/api/data";
+    <script>
+        let chart = null;
 
         async function fetchData() {
             try {
-                const response = await fetch(API_URL);
-                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                return await response.json();
+                const response = await fetch('/api/data');
+                const data = await response.json();
+                createChart(data);
             } catch (error) {
-                console.error("Error fetching data:", error);
-                alert("Failed to load data. Check console for details.");
-                return {};
+                console.error('Error fetching data:', error);
+                document.querySelector('.chart-container').innerHTML = 
+                    '<div class="loading">Error loading data. Please try again later.</div>';
             }
         }
 
-        async function renderChart() {
-            const data = await fetchData();
-            if (!data || Object.keys(data).length === 0) return;
-
-            const years = Object.keys(data[Object.keys(data)[0]]);
-            const datasets = Object.entries(data).map(([topic, values]) => ({
-                label: topic,
-                data: Object.values(values),
-                borderColor: `hsl(${Math.random() * 360}, 70%, 50%)`,
-                fill: false
+        function createChart(data) {
+            const ctx = document.getElementById('tagChart').getContext('2d');
+            
+            // Prepare datasets
+            const datasets = data.tags.map(tag => ({
+                label: tag.name,
+                data: tag.data,
+                borderWidth: 2,
+                fill: false,
+                tension: 0.4
             }));
 
-            new Chart(document.getElementById("topicChart"), {
-                type: "line",
+            // Create the chart
+            chart = new Chart(ctx, {
+                type: 'line',
                 data: {
-                    labels: years,
+                    labels: data.years,
                     datasets: datasets
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        legend: { 
-                            position: "top",
-                            labels: { padding: 20 }
+                        title: {
+                            display: true,
+                            text: 'Tag Popularity Over Time',
+                            font: {
+                                size: 18
+                            }
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.dataset.label}: ${context.parsed.y.toFixed(2)}%`;
+                                }
+                            }
+                        },
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                boxWidth: 12,
+                                padding: 20
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Percentage of Total Questions'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Year'
+                            }
                         }
                     }
                 }
             });
         }
 
-        renderChart();
+        // Fetch data when page loads
+        document.addEventListener('DOMContentLoaded', fetchData);
     </script>
 </body>
-</html>
+</html> 
