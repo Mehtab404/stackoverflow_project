@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Topic Trends</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="chart-container">
+    <h1 align="center">Stack Overflow Tag Analysis 2023-25</h1>
+    <canvas id="topicChart" style="padding: 80px 130px;"></canvas>
+</div>
+    <script>    
+        async function fetchData() {
+            const response = await fetch("http://127.0.0.1:5000/api/data");
+            const data = await response.json();
+            return data;
+        }
+
+        async function renderChart() {
+            const data = await fetchData();
+            const years = Object.keys(data[Object.keys(data)[0]]);
+            const datasets = Object.entries(data).map(([topic, values]) => ({
+                label: topic,
+                data: Object.values(values),
+                borderColor: `hsl(${Math.random() * 360}, 70%, 50%)`,
+                fill: false
+            }));
+
+            new Chart(document.getElementById("topicChart"), {
+                type: "line",
+                data: {
+                    labels: years,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { position: "top" }
+                    }
+                }
+            });
+        }
+
+        renderChart();
+    </script>
+</body>
+</html>
