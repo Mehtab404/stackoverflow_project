@@ -5,22 +5,35 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Topic Trends</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="/style.css">
 </head>
 <body>
     <div class="chart-container">
-    <h1 align="center">Stack Overflow Tag Analysis 2023-25</h1>
-    <canvas id="topicChart" style="padding: 80px 130px;"></canvas>
-</div>
+        <h1 align="center">Stack Overflow Tag Analysis 2023-25</h1>
+        <canvas id="topicChart" style="padding: 80px 130px;"></canvas>
+    </div>
+
     <script>    
+        const API_URL = window.location.origin + "/api/data"; 
+
         async function fetchData() {
-            const response = await fetch("http://127.0.0.1:5000/api/data");
-            const data = await response.json();
-            return data;
+            try {
+                const response = await fetch(API_URL);
+                const data = await response.json();
+                return data;
+            } catch (error) {
+                console.error("Error fetching data:", error);
+                return {};
+            }
         }
 
         async function renderChart() {
             const data = await fetchData();
+            if (Object.keys(data).length === 0) {
+                alert("No data available. Please check API response.");
+                return;
+            }
+
             const years = Object.keys(data[Object.keys(data)[0]]);
             const datasets = Object.entries(data).map(([topic, values]) => ({
                 label: topic,
